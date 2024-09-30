@@ -80,6 +80,7 @@
     <div id="buttons">
         <button id="approveBtn">Approve</button>
         <button id="rejectBtn">Reject</button>
+        <button id="regenerateBtn">Regenerate</button> <!-- Regenerate button added -->
     </div>
     
     <div id="message"></div>
@@ -160,6 +161,11 @@
             messageDiv.style.color = 'red';
             scannedImage.style.display = 'none';  // Hide the image if rejected
             resetScanner();
+        });
+
+        // Regenerate button action
+        document.getElementById('regenerateBtn').addEventListener('click', function() {
+            resetScanner(); // Reloads the scanner
         });
 
         // Reset the scanner to scan another QR code
