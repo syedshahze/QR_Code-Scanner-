@@ -14,23 +14,45 @@
             margin: 0;
             font-family: Arial, sans-serif;
             overflow: hidden;
+            background-color: #f0f0f0;
+        }
+        #scanner {
+            position: relative;
+            width: 80%; /* Width of the scanning area */
+            max-width: 400px; /* Maximum width for larger screens */
+            height: 400px; /* Fixed height for scanning */
+            border: 2px dashed #007BFF; /* Dashed border for visibility */
+            overflow: hidden;
+            border-radius: 10px; /* Rounded corners */
         }
         video {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
-            max-width: 400px;
-            height: auto;
+            height: 100%;
+            object-fit: cover; /* Maintain aspect ratio */
         }
         canvas {
-            display: none;
+            display: none; /* Hide the canvas used for scanning */
         }
         #output, #buttons {
             margin-top: 20px;
             display: none;
+            text-align: center;
         }
         button {
             margin: 5px;
             padding: 10px 20px;
             cursor: pointer;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
         }
         #message {
             margin-top: 10px;
@@ -38,14 +60,17 @@
         }
         #scannedImage {
             margin-top: 10px;
-            max-width: 400px;
-            display: none;
+            max-width: 100%;
+            display: none; /* Hide until approved */
+            border-radius: 5px; /* Rounded corners */
         }
     </style>
 </head>
 <body>
     <h1>QR Code Scanner</h1>
-    <video id="video" autoplay playsinline></video>
+    <div id="scanner">
+        <video id="video" autoplay playsinline></video>
+    </div>
     <canvas id="canvas" hidden></canvas>
     
     <div id="output">
@@ -77,8 +102,8 @@
         function startCamera() {
             const constraints = {
                 video: {
-                    facingMode: { ideal: 'environment' }, // Try to use rear camera if possible
-                    width: { ideal: 1280 },  // Adjust to higher resolution for better QR scanning
+                    facingMode: { ideal: 'environment' },
+                    width: { ideal: 1280 },
                     height: { ideal: 720 }
                 }
             };
@@ -86,7 +111,7 @@
             navigator.mediaDevices.getUserMedia(constraints)
             .then(stream => {
                 video.srcObject = stream;
-                video.setAttribute('playsinline', true);  // For iOS Safari
+                video.setAttribute('playsinline', true);
                 requestAnimationFrame(tick);
             })
             .catch(err => {
