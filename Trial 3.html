@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Scanner</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        video {
+            width: 100%;
+            max-width: 400px;
+            height: auto;
+        }
+        canvas {
+            display: none;
+        }
+        #output, #buttons {
+            margin-top: 20px;
+            display: none; /* Hidden initially */
+        }
+        button {
+            margin: 5px;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+        #message {
+            margin-top: 10px;
+            color: green;
+        }
+        #scannedImage {
+            margin-top: 10px;
+            max-width: 400px;
+            display: none; /* Hidden until approve is clicked */
+        }
+    </style>
+</head>
+<body>
+    <h1>QR Code Scanner</h1>
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas" hidden></canvas>
+    
+    <div id="output">
+        <strong>QR Code Data:</strong> <span id="outputData">None</span>
+    </div>
+    
+    <div id="buttons">
+        <button id="approveBtn">Approve</button>
+        <button id="rejectBtn">Reject</button>
+    </div>
+    
+    <div id="message"></div>
+    <img id="scannedImage" alt="Scanned QR Code Image">
+
+    <!-- Load jsQR library from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        const outputData = document.getElementById('outputData');
+        const outputDiv = document.getElementById('output');
+        const buttonsDiv = document.getElementById('buttons');
+        const messageDiv = document.getElementById('message');
+        const scannedImage = document.getElementById('scannedImage');  // Image element for displaying scanned picture
+        let scannedData = '';  // Store scanned data
+
+        // Get access to the camera
+        function startCamera() {
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+            .then(stream => {
+                video.srcObject = stream;
+                video.setAttribute('playsinline', true); // required to tell iOS Safari we don't want fullscreen
+                requestAnimationFrame(tick);
+            })
+            .catch(err => {
+                console.error("Error accessing camera: ", err);
+                alert("Unable to access the camera. Please make sure the camera is enabled and the browser has permission to access it.");
+            });
+        }
+
+        function tick() {
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                canvas.hidden = false;
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                const qrCode = jsQR(imageData.data, imageData.width, imageData.height);
+
+                if (qrCode) {
+                    scannedData = qrCode.data;
+                    outputData.textContent = scannedData;
+                    outputDiv.style.display = 'block';
+                    buttonsDiv.style.display = 'block';
+                    video.pause();  // Pause video while waiting for user action
+                }
+            }
+            requestAnimationFrame(tick);
+        }
+
+        // Approve button action
+        document.getElementById('approveBtn').addEventListener('click', function() {
+            messageDiv.textContent = 'Data has been saved: ' + scannedData;
+            messageDiv.style.color = 'green';
+            
+            // Capture the current frame from the canvas and display it
+            const imageUrl = canvas.toDataURL('image/png');  // Get image from the canvas
+            scannedImage.src = imageUrl;  // Set the image URL to the img element
+            scannedImage.style.display = 'block';  // Show the image
+
+            resetScanner();
+        });
+
+        // Reject button action
+        document.getElementById('rejectBtn').addEventListener('click', function() {
+            messageDiv.textContent = 'No data saved';
+            messageDiv.style.color = 'red';
+            scannedImage.style.display = 'none';  // Hide the image if rejected
+            resetScanner();
+        });
+
+        // Reset the scanner to scan another QR code
+        function resetScanner() {
+            scannedData = '';
+            outputData.textContent = 'None';
+            outputDiv.style.display = 'none';
+            buttonsDiv.style.display = 'none';
+            video.play();  // Resume video for further scanning
+        }
+
+        // Start the camera after the page has loaded
+        window.onload = startCamera;
+    </script>
+</body>
+</html>
