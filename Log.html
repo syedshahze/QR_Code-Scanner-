@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Login and Scanner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        #loginPage, #scannerPage {
+            display: none;
+            width: 100%;
+            text-align: center;
+        }
+        #loginPage.active, #scannerPage.active {
+            display: block;
+        }
+        #loginContainer {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 0px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            padding: 15px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #scanner {
+            position: relative;
+            width: 90%;
+            max-width: 400px;
+            height: 300px;
+            border: 2px dashed #007BFF;
+            overflow: hidden;
+            border-radius: 10px;
+        }
+        video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        canvas {
+            display: none;
+        }
+        #output, #buttons {
+            margin-top: 20px;
+            display: none;
+        }
+        #message {
+            margin-top: 10px;
+            color: green;
+        }
+        #scannedImage {
+            margin-top: 10px;
+            max-width: 100%;
+            display: none;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Login Page -->
+    <div id="loginPage" class="active">
+        <div id="loginContainer">
+            <h1>Login</h1>
+            <!-- Placeholder for the logos -->
+            <img src="login_logo.png" alt="Login Logo" class="logo">
+            <img src="qr_logo.png" alt="QR Logo" class="logo">
+            <input type="text" id="username" placeholder="Username">
+            <input type="password" id="password" placeholder="Password">
+            <button onclick="login()">Submit</button>
+        </div>
+    </div>
+
+    <!-- QR Code Scanner Page -->
+    <div id="scannerPage">
+        <h1>QR Code Scanner</h1>
+        <div id="scanner">
+            <video id="video" autoplay playsinline></video>
+        </div>
+        <canvas id="canvas" hidden></canvas>
+        <div id="output">
+            <strong>QR Code Data:</strong> <span id="outputData">None</span>
+        </div>
+        <div id="buttons">
+            <button id="approveBtn">Approve</button>
+            <button id="rejectBtn">Reject</button>
+            <button id="regenerateBtn">Regenerate</button>
+        </div>
+        <div id="message"></div>
+        <img id="scannedImage" alt="Scanned QR Code Image">
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        const outputData = document.getElementById('outputData');
+        const outputDiv = document.getElementById('output');
+        const buttonsDiv = document.getElementById('buttons');
+        const messageDiv = document.getElementById('message');
+        const scannedImage = document.getElementById('scannedImage');
+        let scannedData = '';
+
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                alert("Username / Password is Missing");
+            } else {
+                document.getElementById('loginPage').classList.remove('active');
+                document.getElementById('scannerPage').classList.add('active');
+                startCamera();
+            }
+        }
+
+        function startCamera() {
+            const constraints = {
+                video: {
+                    facingMode: { ideal: 'user' },
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                }
+            };
+
+            navigator.mediaDevices.getUserMedia(constraints)
+            .then(stream => {
+                video.srcObject = stream;
+                video.setAttribute('playsinline', true);
+                requestAnimationFrame(tick);
+            })
+            .catch(err => {
+                console.error("Error accessing camera: ", err);
+                alert("Unable to access the camera. Please make sure the camera is enabled and browser has permission to access it.");
+            });
+        }
+
+        function tick() {
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                canvas.hidden = false;
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                const qrCode = jsQR(imageData.data, imageData.width, imageData.height);
+
+                if (qrCode) {
+                    scannedData = qrCode.data;
+                    outputData.textContent = scannedData;
+                    outputDiv.style.display = 'block';
+                    buttonsDiv.style.display = 'block';
+                    video.pause();
+                }
+            }
+            requestAnimationFrame(tick);
+        }
+
+        // Approve button action
+        document.getElementById('approveBtn').addEventListener('click', function() {
+            messageDiv.textContent = 'Data has been saved: ' + scannedData;
+            messageDiv.style.color = 'green';
+            const imageUrl = canvas.toDataURL('image/png');
+            scannedImage.src = imageUrl;
+            scannedImage.style.display = 'block';
+            resetScanner();
+        });
+
+        // Reject button action
+        document.getElementById('rejectBtn').addEventListener('click', function() {
+            messageDiv.textContent = 'No data saved';
+            messageDiv.style.color = 'red';
+            scannedImage.style.display = 'none';
+            resetScanner();
+        });
+
+        // Regenerate button action
+        document.getElementById('regenerateBtn').addEventListener('click', function() {
+            resetScanner();
+        });
+
+        function resetScanner() {
+            scannedData = '';
+            outputData.textContent = 'None';
+            outputDiv.style.display = 'none';
+            buttonsDiv.style.display = 'none';
+            video.play();
+        }
+    </script>
+
+</body>
+</html>
