@@ -18,12 +18,12 @@
         }
         #scanner {
             position: relative;
-            width: 80%; /* Width of the scanning area */
-            max-width: 400px; /* Maximum width for larger screens */
-            height: 400px; /* Fixed height for scanning */
-            border: 2px dashed #007BFF; /* Dashed border for visibility */
+            width: 80%;
+            max-width: 400px;
+            height: 400px;
+            border: 2px dashed #007BFF;
             overflow: hidden;
-            border-radius: 10px; /* Rounded corners */
+            border-radius: 10px;
         }
         video {
             position: absolute;
@@ -31,10 +31,10 @@
             left: 0;
             width: 100%;
             height: 100%;
-            object-fit: cover; /* Maintain aspect ratio */
+            object-fit: cover;
         }
         canvas {
-            display: none; /* Hide the canvas used for scanning */
+            display: none;
         }
         #output, #buttons {
             margin-top: 20px;
@@ -61,8 +61,8 @@
         #scannedImage {
             margin-top: 10px;
             max-width: 100%;
-            display: none; /* Hide until approved */
-            border-radius: 5px; /* Rounded corners */
+            display: none;
+            border-radius: 5px;
         }
     </style>
 </head>
@@ -80,7 +80,7 @@
     <div id="buttons">
         <button id="approveBtn">Approve</button>
         <button id="rejectBtn">Reject</button>
-        <button id="regenerateBtn">Regenerate</button> <!-- Regenerate button added -->
+        <button id="regenerateBtn">Regenerate</button>
     </div>
     
     <div id="message"></div>
@@ -103,7 +103,7 @@
         function startCamera() {
             const constraints = {
                 video: {
-                    facingMode: { ideal: 'environment' },
+                    facingMode: { ideal: 'user' }, // Use 'user' for the front camera
                     width: { ideal: 1280 },
                     height: { ideal: 720 }
                 }
@@ -159,13 +159,13 @@
         document.getElementById('rejectBtn').addEventListener('click', function() {
             messageDiv.textContent = 'No data saved';
             messageDiv.style.color = 'red';
-            scannedImage.style.display = 'none';  // Hide the image if rejected
+            scannedImage.style.display = 'none';
             resetScanner();
         });
 
         // Regenerate button action
         document.getElementById('regenerateBtn').addEventListener('click', function() {
-            resetScanner(); // Reloads the scanner
+            resetScanner();
         });
 
         // Reset the scanner to scan another QR code
