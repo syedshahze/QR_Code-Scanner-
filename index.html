@@ -3,24 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code Scanner</title>
+    <title>QR Code Login and Scanner</title>
     <style>
         body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            margin: 0;
-            font-family: Arial, sans-serif;
-            overflow: hidden;
-            background-color: #f0f0f0;
+        }
+        #loginPage, #scannerPage {
+            display: none;
+            width: 100%;
+            text-align: center;
+        }
+        #loginPage.active, #scannerPage.active {
+            display: block;
+        }
+        #loginContainer {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 0px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            padding: 15px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
         }
         #scanner {
             position: relative;
-            width: 80%;
+            width: 90%;
             max-width: 400px;
-            height: 400px;
+            height: 300px;
             border: 2px dashed #007BFF;
             overflow: hidden;
             border-radius: 10px;
@@ -39,20 +84,6 @@
         #output, #buttons {
             margin-top: 20px;
             display: none;
-            text-align: center;
-        }
-        button {
-            margin: 5px;
-            padding: 10px 20px;
-            cursor: pointer;
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            transition: background-color 0.3s;
-        }
-        button:hover {
-            background-color: #0056b3;
         }
         #message {
             margin-top: 10px;
@@ -67,26 +98,39 @@
     </style>
 </head>
 <body>
-    <h1>QR Code Scanner</h1>
-    <div id="scanner">
-        <video id="video" autoplay playsinline></video>
-    </div>
-    <canvas id="canvas" hidden></canvas>
-    
-    <div id="output">
-        <strong>QR Code Data:</strong> <span id="outputData">None</span>
-    </div>
-    
-    <div id="buttons">
-        <button id="approveBtn">Approve</button>
-        <button id="rejectBtn">Reject</button>
-        <button id="regenerateBtn">Regenerate</button>
-    </div>
-    
-    <div id="message"></div>
-    <img id="scannedImage" alt="Scanned QR Code Image">
 
-    <!-- Load jsQR library from CDN -->
+    <!-- Login Page -->
+    <div id="loginPage" class="active">
+        <div id="loginContainer">
+            <h1>Login</h1>
+            <!-- Placeholder for the logos -->
+            <img src="login_logo.png" alt="Login Logo" class="logo">
+            <img src="qr_logo.png" alt="QR Logo" class="logo">
+            <input type="text" id="username" placeholder="Username">
+            <input type="password" id="password" placeholder="Password">
+            <button onclick="login()">Submit</button>
+        </div>
+    </div>
+
+    <!-- QR Code Scanner Page -->
+    <div id="scannerPage">
+        <h1>QR Code Scanner</h1>
+        <div id="scanner">
+            <video id="video" autoplay playsinline></video>
+        </div>
+        <canvas id="canvas" hidden></canvas>
+        <div id="output">
+            <strong>QR Code Data:</strong> <span id="outputData">None</span>
+        </div>
+        <div id="buttons">
+            <button id="approveBtn">Approve</button>
+            <button id="rejectBtn">Reject</button>
+            <button id="regenerateBtn">Regenerate</button>
+        </div>
+        <div id="message"></div>
+        <img id="scannedImage" alt="Scanned QR Code Image">
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
     <script>
         const video = document.getElementById('video');
@@ -99,11 +143,23 @@
         const scannedImage = document.getElementById('scannedImage');
         let scannedData = '';
 
-        // Get access to the camera
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                alert("Username / Password is Missing");
+            } else {
+                document.getElementById('loginPage').classList.remove('active');
+                document.getElementById('scannerPage').classList.add('active');
+                startCamera();
+            }
+        }
+
         function startCamera() {
             const constraints = {
                 video: {
-                    facingMode: { ideal: 'user' }, // Use 'user' for the front camera
+                    facingMode: { ideal: 'user' },
                     width: { ideal: 1280 },
                     height: { ideal: 720 }
                 }
@@ -136,7 +192,7 @@
                     outputData.textContent = scannedData;
                     outputDiv.style.display = 'block';
                     buttonsDiv.style.display = 'block';
-                    video.pause();  // Pause video while waiting for user action
+                    video.pause();
                 }
             }
             requestAnimationFrame(tick);
@@ -146,12 +202,9 @@
         document.getElementById('approveBtn').addEventListener('click', function() {
             messageDiv.textContent = 'Data has been saved: ' + scannedData;
             messageDiv.style.color = 'green';
-
-            // Capture the current frame from the canvas and display it
             const imageUrl = canvas.toDataURL('image/png');
             scannedImage.src = imageUrl;
             scannedImage.style.display = 'block';
-
             resetScanner();
         });
 
@@ -168,17 +221,14 @@
             resetScanner();
         });
 
-        // Reset the scanner to scan another QR code
         function resetScanner() {
             scannedData = '';
             outputData.textContent = 'None';
             outputDiv.style.display = 'none';
             buttonsDiv.style.display = 'none';
-            video.play();  // Resume video for further scanning
+            video.play();
         }
-
-        // Start the camera after the page has loaded
-        window.onload = startCamera;
     </script>
+
 </body>
 </html>
