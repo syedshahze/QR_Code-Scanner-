@@ -16,21 +16,21 @@
             align-items: center;
             height: 100vh;
         }
-        #loginPage, #scannerPage {
+        #loginPage, #menuPage, #scannerPage, #qrInfoPage {
             display: none;
             width: 100%;
             text-align: center;
         }
-        #loginPage.active, #scannerPage.active {
+        #loginPage.active, #menuPage.active, #scannerPage.active, #qrInfoPage.active {
             display: block;
         }
-        #loginContainer {
+        #loginContainer, #menuContainer {
             background-color: white;
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             width: 100%;
-            max-width: 400px;
+            max-width: 250px;
         }
         h1 {
             margin-bottom: 20px;
@@ -41,9 +41,9 @@
             margin-bottom: 20px;
         }
         input[type="text"], input[type="password"] {
-            width: 100%;
-            padding: 0px;
-            margin-bottom: 10px;
+            width: 70%;
+            padding: 10px; /* Adjusted for better padding */
+            margin-bottom: 20px;
             border: 1px solid #ccc;
             border-radius: 5px;
             font-size: 16px;
@@ -55,11 +55,60 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            width: 100%;
+            width: 70%; /* Set width to match Submit button */
             font-size: 16px;
+            margin: 5px 0; /* Added margin for spacing */
         }
         button:hover {
             background-color: #0056b3;
+        }
+        .completed-btn {
+            background-color: green;
+        }
+        .menu-button {
+            margin: 10px 0;
+            padding: 15px 20px;
+            width: 70%;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .menu-button:hover {
+            background-color: #0056b3;
+        }
+        .menu-heading {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+        .qr-info {
+            text-align: left;
+            font-size: 18px;
+            max-width: 300px;
+            margin: auto;
+        }
+        .qr-info b {
+            font-weight: bold;
+        }
+        .qr-info span {
+            font-weight: normal;
+        }
+        #completedBtn {
+            padding: 15px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 70%;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        #completedBtn.completed {
+            background-color: green;
         }
         #scanner {
             position: relative;
@@ -69,6 +118,7 @@
             border: 2px dashed #007BFF;
             overflow: hidden;
             border-radius: 10px;
+            margin: auto;
         }
         video {
             position: absolute;
@@ -81,20 +131,6 @@
         canvas {
             display: none;
         }
-        #output, #buttons {
-            margin-top: 20px;
-            display: none;
-        }
-        #message {
-            margin-top: 10px;
-            color: green;
-        }
-        #scannedImage {
-            margin-top: 10px;
-            max-width: 100%;
-            display: none;
-            border-radius: 5px;
-        }
     </style>
 </head>
 <body>
@@ -103,12 +139,19 @@
     <div id="loginPage" class="active">
         <div id="loginContainer">
             <h1>Login</h1>
-            <!-- Placeholder for the logos -->
-            <img src="login_logo.png" alt="Login Logo" class="logo">
-            <img src="qr_logo.png" alt="QR Logo" class="logo">
             <input type="text" id="username" placeholder="Username">
             <input type="password" id="password" placeholder="Password">
             <button onclick="login()">Submit</button>
+        </div>
+    </div>
+
+    <!-- Menu Page -->
+    <div id="menuPage">
+        <div id="menuContainer">
+            <div class="menu-heading">OMBRE</div>
+            <button class="menu-button" onclick="navigateTo('scannerPage')">Scanning</button>
+            <button class="menu-button">My Worklist</button>
+            <button class="menu-button">Style Details</button>
         </div>
     </div>
 
@@ -123,12 +166,26 @@
             <strong>QR Code Data:</strong> <span id="outputData">None</span>
         </div>
         <div id="buttons">
-            <button id="approveBtn">Approve</button>
+            <button id="approveBtn" onclick="showQRInfo()">Approve</button>
             <button id="rejectBtn">Reject</button>
             <button id="regenerateBtn">Regenerate</button>
         </div>
-        <div id="message"></div>
-        <img id="scannedImage" alt="Scanned QR Code Image">
+    </div>
+
+    <!-- QR Info Page -->
+    <div id="qrInfoPage">
+        <h1>Scanned QR Information</h1>
+        <div class="qr-info">
+            <b>Production Order#: </b><span>012356</span><br>
+            <b>Customer Name: </b><span>Outfitters</span><br>
+            <b>Style: </b><span>E105/106/246</span><br>
+            <b>Season: </b><span>WS-24</span><br>
+            <b>Employee Code: </b><span>1000089</span><br>
+            <b>Employee Name: </b><span>Hamza</span><br>
+            <b>Operation: </b><span>Pressing</span><br>
+            <b>Cut/Bundle: </b><span>1/12</span>
+        </div>
+        <button id="completedBtn" onclick="completeTask()">Completed</button>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
@@ -139,8 +196,6 @@
         const outputData = document.getElementById('outputData');
         const outputDiv = document.getElementById('output');
         const buttonsDiv = document.getElementById('buttons');
-        const messageDiv = document.getElementById('message');
-        const scannedImage = document.getElementById('scannedImage');
         let scannedData = '';
 
         function login() {
@@ -151,9 +206,28 @@
                 alert("Username / Password is Missing");
             } else {
                 document.getElementById('loginPage').classList.remove('active');
-                document.getElementById('scannerPage').classList.add('active');
+                document.getElementById('menuPage').classList.add('active');
+            }
+        }
+
+        function navigateTo(page) {
+            document.getElementById('menuPage').classList.remove('active');
+            document.getElementById(page).classList.add('active');
+            if (page === 'scannerPage') {
                 startCamera();
             }
+        }
+
+        function showQRInfo() {
+            // Hardcoded info will be shown on this page
+            document.getElementById('scannerPage').classList.remove('active');
+            document.getElementById('qrInfoPage').classList.add('active');
+        }
+
+        function completeTask() {
+            const completedBtn = document.getElementById('completedBtn');
+            completedBtn.classList.add('completed');
+            completedBtn.textContent = "Completed";
         }
 
         function startCamera() {
@@ -198,37 +272,23 @@
             requestAnimationFrame(tick);
         }
 
-        // Approve button action
-        document.getElementById('approveBtn').addEventListener('click', function() {
-            messageDiv.textContent = 'Data has been saved: ' + scannedData;
-            messageDiv.style.color = 'green';
-            const imageUrl = canvas.toDataURL('image/png');
-            scannedImage.src = imageUrl;
-            scannedImage.style.display = 'block';
-            resetScanner();
-        });
-
         // Reject button action
         document.getElementById('rejectBtn').addEventListener('click', function() {
-            messageDiv.textContent = 'No data saved';
-            messageDiv.style.color = 'red';
-            scannedImage.style.display = 'none';
-            resetScanner();
+            outputData.textContent = 'No data saved';
+            outputDiv.style.display = 'none';
+            buttonsDiv.style.display = 'none';
+            video.play();
         });
 
         // Regenerate button action
         document.getElementById('regenerateBtn').addEventListener('click', function() {
-            resetScanner();
-        });
-
-        function resetScanner() {
-            scannedData = '';
             outputData.textContent = 'None';
             outputDiv.style.display = 'none';
             buttonsDiv.style.display = 'none';
             video.play();
-        }
+        });
     </script>
 
 </body>
 </html>
+
